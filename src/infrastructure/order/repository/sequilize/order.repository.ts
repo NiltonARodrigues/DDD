@@ -1,6 +1,8 @@
 import Order from "../../../../domain/checkout/entity/order";
 import OrderItemModel from "./order-item.model";
+import OrderItem from "../../../../domain/checkout/entity/order_item";
 import OrderModel from "./order.model";
+import ProductModel from '../../../product/repository/sequelize/product.model';
 
 export default class OrderRepository {
   async create(entity: Order): Promise<void> {
@@ -61,5 +63,52 @@ export default class OrderRepository {
         }
       );
     });
+  }
+
+  async find(id: string): Promise<Order> {
+    const orderModel = await OrderModel.findOne({
+      where: { id: id },
+      include: ["items"],
+    }); 
+
+     const orderItens: OrderItem[] = await Promise.all(orderModel.items.map( async (item): Promise<OrderItem>  => {
+      let prd = ( await ProductModel.findOne({ where: { id: item.product_id } }));
+    
+      return new OrderItem(
+        item.id,
+        item.name,
+        prd.price,
+        item.product_id,
+        item.quantity
+      )}));   
+
+    const newOrder: Order = new Order( orderModel.id, 
+                      orderModel.customer_id, 
+                      orderItens);
+                       
+    return newOrder;
+  }
+
+  async findAll(): Promise<Order[]> {
+    const orderModels = await OrderModel.findAll({ include: ["items"] });
+ 
+    const retOrders = await Promise.all(orderModels.map(async (orderModel) : Promise<Order>  => {
+
+      let orderItens: OrderItem[] = await Promise.all(orderModel.items.map( async (item): Promise<OrderItem>  => {
+        let prd = ( await ProductModel.findOne({ where: { id: item.product_id } }));
+      
+        return new OrderItem(
+          item.id,
+          item.name,
+          prd.price,
+          item.product_id,
+          item.quantity
+        )}));   
+
+      return new Order(orderModel.id, orderModel.customer_id, orderItens)
+
+    }));
+      
+    return retOrders;
   }
 }
