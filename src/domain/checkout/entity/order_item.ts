@@ -38,9 +38,32 @@ export default class OrderItem {
   get price(): number {
     return this._price;
   }
+  
+  changeOrderItem(productId: string, name: string, quantity: number, price: number) {
+    this._name = name;
+    this._price = price;
+    this._productId = productId;
+    this._quantity = quantity;
+    this.validate();
+  }
 
   orderItemTotal(): number{
     return this._price * this._quantity;
+  }
+
+  validate() {
+    if (this._name.length === 0) {
+      throw new Error("Name is required");
+    }
+    if (this._price === 0) {
+      throw new Error("Price is required");
+    }
+    if (this._quantity === 0) {
+      throw new Error("Quantity is required");
+    }
+    if (this._productId.length === 0) {
+      throw new Error("Id Product is required");
+    }
   }
 
 }
